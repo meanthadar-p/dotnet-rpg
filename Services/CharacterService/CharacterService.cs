@@ -1,3 +1,5 @@
+global using AutoMapper;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,25 +13,37 @@ namespace dotnet_rpg.Services.CharacterService
             new Character(),
             new Character { Id = 1, Name = "Deokisis" }
         };
+        private readonly IMapper _mapper;
 
-        public async Task<List<Character>> AddCharacter(Character newCharacter)
+        public CharacterService(IMapper mapper)
         {
-            characters.Add(newCharacter);
-            return characters;
+            this._mapper = mapper;
         }
 
-        public async Task<List<Character>> GetAllCharacters()
+        public async Task<ServiceResponse<List<GetCharacterResponseDto>>> AddCharacter(AddCharacterRequestDto newCharacter)
         {
-            return characters;
+            var serviceResponse = new ServiceResponse<List<GetCharacterResponseDto>>();
+            var character = _mapper.Map<Character>(newCharacter);
+            character.Id = characters.Max(c => c.Id) + 1;
+            characters.Add(character);
+            serviceResponse.Data = characters.Select(c => _mapper.Map<GetCharacterResponseDto>(c)).ToList();
+            return serviceResponse;
         }
 
-        public async Task<Character> GetCharacterById(int id)
+        public async Task<ServiceResponse<List<GetCharacterResponseDto>>> GetAllCharacters()
         {
+            var serviceResponse = new ServiceResponse<List<GetCharacterResponseDto>>();
+            serviceResponse.Data = characters.Select(c => _mapper.Map<GetCharacterResponseDto>(c)).ToList();
+            return serviceResponse;
+        }
+
+        public async Task<ServiceResponse<GetCharacterResponseDto>> GetCharacterById(int id)
+        {
+            var serviceResponse = new ServiceResponse<GetCharacterResponseDto>();
             var character = characters.FirstOrDefault(c => c.Id == id);
-            if(character is not null)
-                return character;
-
-            throw new Exception("Character not found");
+            serviceResponse.Data = _mapper.Map<GetCharacterResponseDto>(character);
+            serviceResponse.Success = character != null;
+            return serviceResponse;
         }
     }
 }
